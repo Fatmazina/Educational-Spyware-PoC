@@ -1,0 +1,18 @@
+# Python Virtual Environment
+venv/
+pyvenv.cfg
+
+# Captured Media (Do not upload these!)
+static/screenshots/
+static/webcam/
+*.jpg
+*.png
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS Files
+.DS_Store
+Thumbs.db

