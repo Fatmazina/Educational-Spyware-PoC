@@ -4,6 +4,7 @@
 
 ## 📖 Overview
 This project is an academic simulation of spyware telemetry. Unlike a full Command and Control (C2) framework, this agent is designed for **passive data collection**. It triggers only upon execution (e.g., when a user opens the installer), gathers specific system metrics, and securely transmits them to a centralized Flask dashboard for analysis.
+<img width="1186" height="534" alt="image" src="https://github.com/user-attachments/assets/67da49be-1fb4-4af9-9d3f-b2cf35b01602" />
 
 ## 🛠️ Tech Stack
 - **Client Agent:** Python 3, `requests`, `psutil` (or your actual libraries)
